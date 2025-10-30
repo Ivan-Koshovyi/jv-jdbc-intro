@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import mate.academy.ConnectionUtil;
+import mate.academy.exception.DataProcessingException;
 import mate.academy.lib.Dao;
 import mate.academy.model.Book;
 
@@ -26,7 +27,7 @@ public class BookDaoImpl implements BookDao {
 
             int affectedRows = statement.executeUpdate();
             if (affectedRows < 1) {
-                throw new RuntimeException("Expected to insert at "
+                throw new DataProcessingException("Expected to insert at "
                         + "leas one row, but inserted 0 rows.");
             }
             ResultSet generatedKeys = statement.getGeneratedKeys();
@@ -35,7 +36,7 @@ public class BookDaoImpl implements BookDao {
                 book.setId(id);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Can not add a new book: " + book, e);
+            throw new DataProcessingException("Can not add a new book: " + book, e);
         }
         return book;
     }
@@ -43,22 +44,18 @@ public class BookDaoImpl implements BookDao {
     @Override
     public Optional<Book> findById(Long id) {
         String sql = "SELECT title, price FROM books WHERE id = ?";
-        Optional<Book> book = null;
+        Optional<Book> book = Optional.empty();
         try (Connection connection = ConnectionUtil.getConection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setDouble(1, id);
+            statement.setLong(1, id);
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
                 String title = resultSet.getString("title");
                 BigDecimal price = resultSet.getBigDecimal("price");
-                book = Optional.of(new Book.Builder()
-                        .setId(id)
-                        .setTitle(title)
-                        .setPrice(price)
-                        .build());
+                book = Optional.of(createdBook(id,title,price));
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Can not select a book with id: " + id, e);
+            throw new DataProcessingException("Can not select a book with id: " + id, e);
         }
         return book;
     }
@@ -71,13 +68,13 @@ public class BookDaoImpl implements BookDao {
                 PreparedStatement statement = connection.prepareStatement(sql)) {
             ResultSet resultSet = statement.executeQuery();
             while (resultSet.next()) {
-                long id = resultSet.getLong("id");
+                long id = resultSet.getObject("id", Long.class);
                 String title = resultSet.getString("title");
                 BigDecimal price = resultSet.getBigDecimal("price");
-                listBook.add(new Book.Builder().setId(id).setTitle(title).setPrice(price).build());
+                listBook.add(createdBook(id,title,price));
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Can not select books", e);
+            throw new DataProcessingException("Can not select books", e);
         }
         return listBook;
     }
@@ -93,7 +90,7 @@ public class BookDaoImpl implements BookDao {
 
             int affectedRows = statement.executeUpdate();
             if (affectedRows < 1) {
-                throw new RuntimeException("Expected to insert at "
+                throw new DataProcessingException("Expected to insert at "
                         + "leas one row, but update 0 rows.");
             }
 
@@ -101,7 +98,7 @@ public class BookDaoImpl implements BookDao {
                     .orElseThrow(() -> new RuntimeException(
                             "Book not found after update, id = " + book.getId()));
         } catch (SQLException e) {
-            throw new RuntimeException("Can not update book: " + book, e);
+            throw new DataProcessingException("Can not update book: " + book, e);
         }
     }
 
@@ -118,7 +115,15 @@ public class BookDaoImpl implements BookDao {
             }
             return true;
         } catch (SQLException e) {
-            throw new RuntimeException("Can not delete book with id: " + id, e);
+            throw new DataProcessingException("Can not delete book with id: " + id, e);
         }
+    }
+
+    private Book createdBook(long id, String title, BigDecimal price) {
+        return new Book.Builder()
+                .setId(id)
+                .setTitle(title)
+                .setPrice(price)
+                .build();
     }
 }
