@@ -5,11 +5,11 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
-public class ConnectionUntil {
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/mysql";
+public class ConnectionUtil {
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/book";
     private static final Properties DB_PROPERTIES;
 
-    static  {
+    static {
         DB_PROPERTIES = new Properties();
         DB_PROPERTIES.put("user", "root");
         DB_PROPERTIES.put("password", "Mister-1234");
@@ -24,6 +24,4 @@ public class ConnectionUntil {
     public static Connection getConection() throws SQLException {
         return DriverManager.getConnection(DB_URL, DB_PROPERTIES);
     }
-
-
 }
