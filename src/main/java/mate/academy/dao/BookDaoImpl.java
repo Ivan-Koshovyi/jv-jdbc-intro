@@ -107,7 +107,7 @@ public class BookDaoImpl implements BookDao {
         String sql = "DELETE FROM books WHERE id = ?";
         try (Connection connection = ConnectionUtil.getConection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setDouble(1, id);
+            statement.setLong(1, id);
 
             int affectedRows = statement.executeUpdate();
             if (affectedRows < 1) {
